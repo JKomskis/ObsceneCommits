@@ -1,0 +1,10 @@
+.about {
+  margin-left: auto;
+  width: fit-content;
+
+  @include respond-to('large') {
+    position: fixed;
+    right: 0.5rem;
+    top: 0.5rem;
+  }
+}

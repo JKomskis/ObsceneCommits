@@ -1,0 +1,50 @@
+/// Credit: https://sass-guidelin.es/#responsive-web-design-and-breakpoints
+/// Responsive media query manager
+/// @access public
+/// @param {String} $media-query - media-query
+/// @requires $media-queries
+@mixin respond-to($media-query) {
+  $raw-query: map-get($media-queries, $media-query);
+
+  @if $raw-query {
+    $query: if(type-of($raw-query) == 'string',
+    unquote($raw-query),
+    inspect($raw-query));
+
+    @media #{$query} {
+      @content;
+    }
+  } @else {
+    @error 'No value found for `#{$breakpoint}`. '
+      + 'Please make sure it is defined in `$breakpoints` map.';
+  }
+}
+
+/// Card base style
+@mixin card {
+  @include ms-depth-4;
+  background-color: $light-background-color;
+  border-radius: 2px;
+  height: fit-content;
+  padding: 2rem;
+  transition: 0.4s;
+  width: fit-content;
+
+  @include respond-to('can-hover') {
+    &:hover {
+      @include ms-depth-16;
+    }
+  }
+}
+
+/// Button base style
+@mixin button {
+  border-radius: 2px;
+  border-style: solid;
+  border-width: 1px;
+  cursor: pointer;
+  font-weight: $semibold-font-weight;
+  margin: 0 0.25rem;
+  padding: 0.5rem 1rem;
+  text-align: center;
+}

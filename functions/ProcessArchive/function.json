@@ -1,0 +1,12 @@
+{
+  "bindings": [
+    {
+      "name": "myQueueItem",
+      "type": "queueTrigger",
+      "direction": "in",
+      "queueName": "process-archive-queue-items",
+      "connection": "obscenecommits_STORAGE"
+    }
+  ],
+  "scriptFile": "../dist/ProcessArchive/index.js"
+}

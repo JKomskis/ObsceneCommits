@@ -1,0 +1,19 @@
+---
+layout: layouts/default
+pagination:
+  data: commits
+  alias: commits
+  size: 25
+  reverse: true
+permalink: "{% if pagination.pageNumber > 0 %}page/page-{{ pagination.pageNumber + 1 }}.html{% else %}index.html{% endif %}"
+
+---
+<div class="commit-container">
+    {% for commit in commits %}
+        {% include "components/commit-entry.html" %}
+    {% endfor %}
+</div>
+<div class="pagination__navigation">
+    <a href={{ pagination.href.previous }}>Previous</a>
+    <a class="pagination__next" href={{ pagination.href.next }}>Next</a>
+</div>

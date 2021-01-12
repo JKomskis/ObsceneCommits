@@ -1,0 +1,5 @@
+.commit-container {
+  display: grid;
+  gap: 0;
+  grid-template-columns: auto auto minmax(0, 1fr);
+}

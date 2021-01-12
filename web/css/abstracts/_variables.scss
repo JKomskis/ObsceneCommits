@@ -1,0 +1,99 @@
+@import 'node_modules/office-ui-fabric-core/dist/sass/References';
+@import 'node_modules/office-ui-fabric-core/dist/sass/Depth';
+
+///
+/// Colors
+///
+
+/// Background color
+/// @type Color
+$background-color: #e4e4e4 !default;
+
+/// Highlighted background color
+/// @type Color
+$highlighted-background-color: darken($background-color, 5%) !default;
+
+/// Light background color
+/// @type Color
+$light-background-color: #fff !default;
+
+/// Border color
+/// @type Color
+$border-color: #646464 !default;
+
+/// Primary text color
+/// @type Color
+$text-color: #323232 !default;
+
+/// Secondary text color
+/// @type Color
+$secondary-text-color: #646464 !default;
+
+/// Light text color
+/// @type Color
+$light-text-color: #fff !default;
+
+/// Link text color
+/// @type Color
+$link-color: #0e4671 !default;
+
+/// Standard button color
+/// @type Color
+$standard-button-color: #fff !default;
+
+/// Standard button checked color
+/// @type Color
+$standard-button-checked-color: darken($standard-button-color, 5%) !default;
+
+/// Primary button color
+/// @type Color
+$primary-button-color: #1a5888 !default;
+
+/// Parimary button checked color
+/// @type Color
+$primary-button-checked-color: darken($primary-button-color, 5%) !default;
+
+/// Button disabled color
+/// @type Color
+$button-disabled-color: #f3f3f3 !default;
+
+/// Button disabled text color
+/// @type Color
+$button-disabled-text-color: #f3f3f3 !default;
+
+///
+/// Breakpoints
+///
+
+$media-queries: (
+  'small': (min-width: 320px),
+  'medium': (min-width: 480px),
+  'large': (min-width: 640px),
+  'xlarge': (min-width: 1024px),
+  'xxlarge': (min-width: 1366px),
+  'xxxlarge': (min-width: 1920px),
+  'can-hover': (hover: hover)
+);
+
+///
+/// Fonts
+///
+
+$mono-font-family: 'IBM Plex Mono', monospace;
+$sans-font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+$serif-font-family: 'IBM Plex Serif', serif;
+
+$normal-font-weight: 400;
+$semibold-font-weight: 600;
+
+$default-font-size: 16px;
+@include respond-to('xlarge') {
+  $default-font-size: 18px;
+}
+$headline-font-size: $default-font-size * 1.618;
+$title-font-size: $default-font-size + $headline-font-size;
+$big-font-size: $title-font-size * 2;
+@include respond-to('xlarge') {
+  $big-font-size: $title-font-size * 2;
+}
+$caption-font-size: $default-font-size - 2px;

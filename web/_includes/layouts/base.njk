@@ -1,0 +1,42 @@
+{%- if title -%}
+    {%- set pageTitle = title -%}
+{%- else -%}
+    {%- set pageTitle = site.title -%}
+{%- endif -%}
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- <link rel="preload" href="/web/css/fonts/lato/2.0/LatoLatin-Regular.supersubset.woff2" as="font" type="font/woff2" crossorigin=""> -->
+    <title>{{ pageTitle }}</title>
+    <meta property="og:title" content="{{ pageTitle }}">
+    <meta name="author" content="{{ author }}">
+    <meta property="og:site_name" content="Obscene Commits">
+    <meta name="description" content="A static website of GitHub's greatest commits">
+    <meta property="og:description" content="A static website of GitHub's greatest commits">
+    <link rel="canonical" href="https://www.jkomskis.com">
+    <link rel="stylesheet" href="/assets/css/main.min.css" type="text/css">
+    <!-- Matomo -->
+    <script type="text/javascript">
+    var _paq = window._paq = window._paq || [];
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+        var u="//analytics.jkomskis.com/";
+        _paq.push(['setTrackerUrl', u+'matomo.php']);
+        _paq.push(['setSiteId', '1']);
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.type='text/javascript'; g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+    })();
+    </script>
+    <!-- End Matomo Code -->
+</head>
+
+<body>
+    {{ content | safe }}
+    <script type="module" src="assets/js/bundle.js"></script>
+</body>
+
+</html>

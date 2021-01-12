@@ -1,0 +1,28 @@
+{
+  "name": "functions",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prestart": "npm run build",
+    "start": "func start",
+    "test": "echo \"No tests yet...\""
+  },
+  "dependencies": {
+    "@azure/storage-blob": "^12.3.0",
+    "@azure/storage-queue": "^12.2.0",
+    "axios": "^0.21.1",
+    "dotenv": "^8.2.0",
+    "node-fetch": "^2.6.1",
+    "split2": "^3.2.2",
+    "through2-filter": "^3.0.0"
+  },
+  "devDependencies": {
+    "@azure/functions": "^1.0.2-beta2",
+    "@types/node": "^14.14.20",
+    "@types/node-fetch": "^2.5.7",
+    "@types/split2": "^2.1.6",
+    "typescript": "^3.3.3"
+  }
+}

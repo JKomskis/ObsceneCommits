@@ -1,0 +1,32 @@
+{
+    "pages": [
+        {
+            "name": "Home",
+            "href": "/"
+        },
+        {
+            "name": "Reading List",
+            "href": "/reading-list"
+        },
+        {
+            "name": "Blog",
+            "href": "/blog"
+        },
+        {
+            "name": "Resume",
+            "href": "https://jkomskisstatic.blob.core.windows.net/uploads/resume-joseph-komskis.pdf"
+        }
+    ],
+    "links": [
+        {
+            "name": "LinkedIn",
+            "icon": "/assets/img/icons/linkedin.png",
+            "href": "https://www.linkedin.com/in/joseph-komskis/"
+        },
+        {
+            "name": "GitHub",
+            "icon": "/assets/img/icons/github.png",
+            "href": "https://github.com/JKomskis"
+        }
+    ]
+}
