@@ -1,0 +1,159 @@
+name: Build and Deploy Project
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron:  '10 * * * *'
+
+env:
+  AZURE_FUNCTIONAPP_NAME: obscenecommits # set this to your application's name
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'functions' # set this to the path to your web app project, defaults to the repository root
+  NODE_VERSION: '14.x'
+  FRONTEND_DEPLOY_PATH: 'obscenecommits'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: build_environment
+
+    steps:
+    - uses: actions/checkout@main
+
+    - name: Cache node modules
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-node-modules
+      with:
+        path: ~/.npm # npm cache files are stored in `~/.npm` on Linux/macOS
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+    
+    - name: Cache Archives
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-archives
+      with:
+        path: archives
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('archives/**/*.json.gz') }}
+
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - run: npm ci
+
+    - run: npm run build:prod
+      env:
+        ACCOUNT_NAME: ${{ secrets.ACCOUNT_NAME }}
+        ACCOUNT_KEY: ${{ secrets.ACCOUNT_KEY }}
+        CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: _site/
+
+  deploy_frontend:
+    needs: build
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    environment: deploy_environment
+
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: _site/${{ env.FRONTEND_DEPLOY_PATH }}
+
+    - uses: azure/login@v1.1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        enable-AzPSSession: true
+    
+    - name: Upload to blob storage
+      uses: azure/powershell@v1
+      with:
+        azPSVersion: latest
+        inlineScript: |
+          $staticAssetCacheControl = "public, max-age=31536000, immutable"
+          $revalidateAssetCacheControl = "no-cache"
+          $properties = @{
+            ".css" = @{
+              CacheControl = $staticAssetCacheControl
+              ContentType = "text/css"
+            }
+            ".js" = @{
+              CacheControl = $staticAssetCacheControl
+              ContentType = "application/javascript"
+            }
+            ".woff2" = @{
+              CacheControl = $staticAssetCacheControl
+              ContentType = "font/woff2"
+            }
+            ".jpg" = @{
+              CacheControl = $staticAssetCacheControl
+              ContentType = "image/jpeg"
+            }
+            ".png" = @{
+              CacheControl = $staticAssetCacheControl
+              ContentType = "image/png"
+            }
+            ".svg" = @{
+              CacheControl = $staticAssetCacheControl
+              ContentType = "image/svg+xml"
+            }
+            ".html" = @{
+              CacheControl = $revalidateAssetCacheControl
+              ContentType = "text/html"
+            }
+          }
+          cd _site
+          Set-AzCurrentStorageAccount -ResourceGroupName ${{ secrets.RESOURCE_GROUP_NAME }} -Name ${{ secrets.STORAGE_ACCOUNT_NAME }}
+          Get-ChildItem -File -Recurse |
+            Foreach-Object {
+              Write-Output $_.fullName
+              Write-Output $_.extension
+              $fileProperties = $properties[$_.extension]
+              $relativePath = $_ | Resolve-Path -Relative
+              if($fileProperties) {
+                Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -properties $fileProperties -Force
+              } else {
+                Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -Force
+              }
+            }
+
+  deploy_backend:
+      needs: build
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      runs-on: ubuntu-latest
+      environment: deploy_environment
+
+      steps:
+      - uses: actions/checkout@main
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 'Resolve Project Dependencies Using Npm'
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          npm ci
+          npm run build --if-present
+          popd
+      - name: 'Run Azure Functions Action'
+        uses: Azure/functions-action@v1
+        id: fa
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }} 
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
