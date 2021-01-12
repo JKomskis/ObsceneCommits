@@ -1,7 +1,7 @@
 {
-  "name": "website",
+  "name": "obscenecommits",
   "version": "1.0.0",
-  "description": "My personal website",
+  "description": "A static website of GitHub's greatest commits.",
   "main": "",
   "scripts": {
     "build": "gulp",
@@ -13,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JKomskis/Website.git"
+    "url": "git+https://github.com/JKomskis/ObsceneCommits.git"
   },
   "author": "Joe Komskis",
   "license": "GPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/JKomskis/Website/issues"
+    "url": "https://github.com/JKomskis/ObsceneCommits/issues"
   },
-  "homepage": "https://github.com/JKomskis/Website#readme",
+  "homepage": "https://github.com/JKomskis/ObsceneCommits#readme",
   "devDependencies": {
     "@11ty/eleventy": "^0.11.1",
     "@azure/storage-blob": "^12.3.0",

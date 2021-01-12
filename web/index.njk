@@ -14,6 +14,6 @@ permalink: "{% if pagination.pageNumber > 0 %}page/page-{{ pagination.pageNumber
     {% endfor %}
 </div>
 <div class="pagination__navigation">
-    <a href={{ pagination.href.previous }}>Previous</a>
-    <a class="pagination__next" href={{ pagination.href.next }}>Next</a>
+    <a {% if pagination.href.previous != null %} href={{ pagination.href.previous }} {% endif %}>Previous</a>
+    <a class="pagination__next" {% if pagination.href.next != null %} href={{ pagination.href.next }} {% endif %}>Next</a>
 </div>

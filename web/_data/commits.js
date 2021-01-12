@@ -27,6 +27,10 @@ function getContainerClient() {
     return blobClient.getContainerClient(container);
 }
 
+async function makeArchiveFolder() {
+    return await mkdir(archivesFolder, { recursive: true });
+}
+
 async function getDownloadedFiles() {
     return await globSync(`${archivesFolder}/**/*.json.gz`);
 }
@@ -48,6 +52,7 @@ async function downloadArchives() {
 
 module.exports = async function () {
     console.log('Creating commit list');
+    await makeArchiveFolder();
     await downloadArchives();
 
     let commits = [];
