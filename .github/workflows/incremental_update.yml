@@ -3,7 +3,9 @@ name: Hourly Incremental Update
 on:
   schedule:
     - cron:  '10 * * * *'
-  workflow_dispatch
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
 
 env:
   AZURE_FUNCTIONAPP_NAME: obscenecommits # set this to your application's name
@@ -98,20 +100,20 @@ jobs:
           }
           cd _site
           Set-AzCurrentStorageAccount -ResourceGroupName ${{ secrets.RESOURCE_GROUP_NAME }} -Name ${{ secrets.STORAGE_ACCOUNT_NAME }}
-          $blobs = (Get-AzStorageContainer -Container '$web' | Get-AzStorageBlob -Blob "${{ env.FRONTEND_DEPLOY_PATH }}/page/*").Name
-          $localFiles = (Get-ChildItem -Recurse -File -Path '${{ env.FRONTEND_DEPLOY_PATH }}/page').fullName + (Get-ChildItem '${{ env.FRONTEND_DEPLOY_PATH }}/index.html')
+          $blobs = (Get-AzStorageContainer -Container '$web' | Get-AzStorageBlob -Blob "${{ env.FRONTEND_DEPLOY_PATH }}/page/*").Name.substring("${{ env.FRONTEND_DEPLOY_PATH }}/".length)
+          $localFiles = (Get-ChildItem -Recurse -File -Path 'page') + (Get-ChildItem 'index.html')
           $localFiles |
             Foreach-Object {
-              $relativePath = $_ | Resolve-Path -Relative
+              $relativePath = ($_ | Resolve-Path -Relative).substring(2)
               Write-Output $relativePath
-              Write-Output $_.fullName
-              Write-Output $_.extension
-              if(!(relativePath -in $blobs)) {
+              if(!($relativePath -in $blobs)) {
+                Write-Output $_.fullName
+                Write-Output $_.extension
                 $fileProperties = $properties[$_.extension]
                 if($fileProperties) {
-                  Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -properties $fileProperties -Force
+                  Set-AzStorageBlobContent -File $_.fullName -Blob ${{ env.FRONTEND_DEPLOY_PATH }}/$relativePath -Container '$web' -properties $fileProperties -Force
                 } else {
-                  Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -Force
+                  Set-AzStorageBlobContent -File $_.fullName -Blob ${{ env.FRONTEND_DEPLOY_PATH }}/$relativePath -Container '$web' -Force
                 }
               }
             }
