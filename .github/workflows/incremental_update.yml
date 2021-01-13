@@ -1,10 +1,9 @@
-name: Build and Deploy Project
+name: Hourly Incremental Update
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  schedule:
+    - cron:  '10 * * * *'
+  workflow_dispatch
 
 env:
   AZURE_FUNCTIONAPP_NAME: obscenecommits # set this to your application's name
@@ -13,7 +12,7 @@ env:
   FRONTEND_DEPLOY_PATH: 'obscenecommits'
 
 jobs:
-  build:
+  build_and_deploy:
     runs-on: ubuntu-latest
     environment: build_environment
 
@@ -54,23 +53,6 @@ jobs:
         ACCOUNT_NAME: ${{ secrets.ACCOUNT_NAME }}
         ACCOUNT_KEY: ${{ secrets.ACCOUNT_KEY }}
         CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: dist
-        path: _site/
-
-  deploy_frontend:
-    needs: build
-    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
-    runs-on: ubuntu-latest
-    environment: build_environment
-
-    steps:
-    - uses: actions/download-artifact@v2
-      with:
-        name: dist
-        path: _site/${{ env.FRONTEND_DEPLOY_PATH }}
 
     - uses: azure/login@v1.1
       with:
@@ -116,44 +98,20 @@ jobs:
           }
           cd _site
           Set-AzCurrentStorageAccount -ResourceGroupName ${{ secrets.RESOURCE_GROUP_NAME }} -Name ${{ secrets.STORAGE_ACCOUNT_NAME }}
-          Get-ChildItem -File -Recurse |
+          $blobs = (Get-AzStorageContainer -Container '$web' | Get-AzStorageBlob -Blob "${{ env.FRONTEND_DEPLOY_PATH }}/page/*").Name
+          $localFiles = (Get-ChildItem -Recurse -File -Path '${{ env.FRONTEND_DEPLOY_PATH }}/page').fullName + (Get-ChildItem '${{ env.FRONTEND_DEPLOY_PATH }}/index.html')
+          $localFiles |
             Foreach-Object {
+              $relativePath = $_ | Resolve-Path -Relative
+              Write-Output $relativePath
               Write-Output $_.fullName
               Write-Output $_.extension
-              $fileProperties = $properties[$_.extension]
-              $relativePath = $_ | Resolve-Path -Relative
-              if($fileProperties) {
-                Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -properties $fileProperties -Force
-              } else {
-                Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -Force
+              if(!(relativePath -in $blobs)) {
+                $fileProperties = $properties[$_.extension]
+                if($fileProperties) {
+                  Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -properties $fileProperties -Force
+                } else {
+                  Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -Force
+                }
               }
             }
-
-  deploy_backend:
-      needs: build
-      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-      runs-on: ubuntu-latest
-      environment: build_environment
-
-      steps:
-      - uses: actions/checkout@main
-
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: 'Resolve Project Dependencies Using Npm'
-        shell: bash
-        run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          npm ci
-          npm run build --if-present
-          popd
-      - name: 'Run Azure Functions Action'
-        uses: Azure/functions-action@v1
-        id: fa
-        with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }} 
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
