@@ -2,10 +2,8 @@ name: Hourly Incremental Update
 
 on:
   schedule:
-    - cron:  '10 * * * *'
+    - cron:  '15 * * * *'
   workflow_dispatch:
-  pull_request:
-    branches: [ main ]
 
 env:
   AZURE_FUNCTIONAPP_NAME: obscenecommits # set this to your application's name

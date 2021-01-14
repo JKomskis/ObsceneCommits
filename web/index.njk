@@ -4,16 +4,15 @@ pagination:
   data: commits
   alias: commits
   size: 25
-  reverse: true
-permalink: "{% if pagination.pageNumber > 0 %}page/page-{{ pagination.pageNumber + 1 }}.html{% else %}index.html{% endif %}"
+permalink: "{% if pagination.pageNumber < pagination.pages.length-1 %}page/page-{{ pagination.pageNumber + 1 }}.html{% else %}index.html{% endif %}"
 
 ---
 <div class="commit-container">
-    {% for commit in commits %}
+    {% for commit in commits | reverse %}
         {% include "components/commit-entry.html" %}
     {% endfor %}
 </div>
 <div class="pagination__navigation">
-    <a {% if pagination.href.previous != null %} href={{ pagination.href.previous }} {% endif %}>Previous</a>
-    <a class="pagination__next" {% if pagination.href.next != null %} href={{ pagination.href.next }} {% endif %}>Next</a>
+    <a {% if pagination.href.next != null %} href={{ pagination.href.next }} {% endif %}>Previous</a>
+    <a class="pagination__next" {% if pagination.href.previous != null %} href={{ pagination.href.previous }} {% endif %}>Next</a>
 </div>

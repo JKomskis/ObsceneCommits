@@ -23,7 +23,11 @@ module.exports = (eleventyConfig) => {
         const minutes = date.getUTCMinutes().toString().padStart(2, '0');
 
         return `${month}/${day}/${year} ${hour}:${minutes} ${timeSuffix}`;
-    })
+    });
+
+    eleventyConfig.addFilter("reverse", function(value) {
+        return value.reverse();
+    });
 
     return {
         dir: {

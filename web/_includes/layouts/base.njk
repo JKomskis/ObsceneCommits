@@ -17,7 +17,7 @@
     <meta name="description" content="A static website of GitHub's greatest commits">
     <meta property="og:description" content="A static website of GitHub's greatest commits">
     <link rel="canonical" href="https://www.jkomskis.com">
-    <link rel="stylesheet" href="assets/css/main.min.css" type="text/css">
+    <link rel="stylesheet" href="{% if pagination.pageNumber < pagination.pages.length-1 %}../{% endif %}assets/css/main.min.css" type="text/css">
     <!-- Matomo -->
     <script type="text/javascript">
     var _paq = window._paq = window._paq || [];
@@ -36,7 +36,7 @@
 
 <body>
     {{ content | safe }}
-    <script type="module" src="assets/js/bundle.js"></script>
+    <script type="module" src="{% if pagination.pageNumber < pagination.pages.length-1 %}../{% endif %}assets/js/bundle.js"></script>
 </body>
 
 </html>
