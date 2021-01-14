@@ -3,11 +3,13 @@ const browserSync = require('browser-sync').create();
 const { assets } = require('./assets');
 const { css } = require('./css');
 const watchEleventy = require('./eleventy').watch;
+const { ts } = require('./ts');
 const paths = require('./paths');
 
 function watchFiles() {
     watch(paths.css.src, css);
     watch(paths.assets.src, assets);
+    watch(paths.ts.src, ts);
     watchEleventy();
 }
 
