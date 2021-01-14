@@ -29,6 +29,13 @@ module.exports = (eleventyConfig) => {
         return value.reverse();
     });
 
+    eleventyConfig.addFilter("makePathRelative", function(value) {
+        if(value[0] === '/') {
+            return value.substring(1);
+        }
+        return value;
+    });
+
     return {
         dir: {
             input: "web",

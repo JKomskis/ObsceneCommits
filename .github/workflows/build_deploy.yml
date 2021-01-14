@@ -129,8 +129,6 @@ jobs:
           Set-AzCurrentStorageAccount -ResourceGroupName ${{ secrets.RESOURCE_GROUP_NAME }} -Name ${{ secrets.STORAGE_ACCOUNT_NAME }}
           Get-ChildItem -File -Recurse |
             Foreach-Object {
-              Write-Output $_.fullName
-              Write-Output $_.extension
               $fileProperties = $properties[$_.extension]
               $relativePath = $_ | Resolve-Path -Relative
               if($fileProperties) {

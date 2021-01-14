@@ -13,4 +13,5 @@ const infScroll = new InfiniteScroll('.commit-container', {
     },
     append: '.commit__wrapper',
     history: false,
+    prefill: true,
 });

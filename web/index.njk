@@ -13,6 +13,6 @@ permalink: "{% if pagination.pageNumber < pagination.pages.length-1 %}page/page-
     {% endfor %}
 </div>
 <div class="pagination__navigation">
-    <a {% if pagination.href.next != null %} href={{ pagination.href.next }} {% endif %}>Previous</a>
-    <a class="pagination__next" {% if pagination.href.previous != null %} href={{ pagination.href.previous }} {% endif %}>Next</a>
+    <a {% if pagination.href.next != null %} href={{ pagination.href.next | makePathRelative }} {% endif %}>Previous</a>
+    <a class="pagination__next" {% if pagination.href.previous != null %} href={{ pagination.href.previous | makePathRelative }} {% endif %}>Next</a>
 </div>
