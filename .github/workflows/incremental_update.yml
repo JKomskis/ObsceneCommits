@@ -2,7 +2,7 @@ name: Hourly Incremental Update
 
 on:
   schedule:
-    - cron:  '0/15 * * * *'
+    - cron:  '15 * * * *'
   workflow_dispatch:
 
 env:
