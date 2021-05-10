@@ -5,6 +5,7 @@ import { createGunzip, createGzip } from 'zlib';
 import split from 'split2';
 import fetch from 'node-fetch';
 import { wordList } from './wordList';
+import { repoExcludeList } from './repoExcludeList';
 import { Transform } from 'stream';
 import { getUrl, getBlobName, getContainerClient } from '../utils/util';
 
@@ -18,6 +19,11 @@ const queueTrigger: AzureFunction = async function (context: Context, myQueueIte
         transform(chunk, env, callback) {
             let eventObject = JSON.parse(chunk);
             if (!eventObject['public'] || !('payload' in eventObject) || !('commits' in eventObject['payload'])) {
+                callback();
+                return;
+            }
+
+            if (repoExcludeList.some((repo) => eventObject['repo']['url'].includes(repo))) {
                 callback();
                 return;
             }

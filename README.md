@@ -7,6 +7,8 @@ A static website of GitHub's greatest commits.
 * Run `npm run build` to build the website (files are placed in _site/)
 * Run `npm run build:prod` to create a production build of the website (files are placed in _site/)
 * Run `npm run serve` to host the _site/ folder locally
+* Run `num run watch` from the `functions` to build and watch the Azure functions
+* Run `npm run start` from the `functions` folder to run the Azure functions locally
 
 ## License
 
