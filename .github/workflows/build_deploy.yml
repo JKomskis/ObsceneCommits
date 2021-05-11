@@ -196,9 +196,9 @@ jobs:
       - uses: actions/checkout@main
 
       - uses: actions/download-artifact@v2
-      with:
-        name: dist
-        path: dist
+        with:
+          name: dist
+          path: dist
 
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
