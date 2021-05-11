@@ -110,18 +110,18 @@ jobs:
 
   deploy_frontend:
     needs: build_frontend
-    # if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.head_ref != 'refs/heads/main') }}
     runs-on: ubuntu-latest
     environment: build_environment
 
     steps:
     - name: Set main branch deploy path suffix
-      if: ${{ github.ref == 'refs/heads/main' }}
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       run: echo "FRONTEND_DEPLOY_PATH_SUFFIX=" >> $GITHUB_ENV
     
     - name: Set non-main branch deploy path suffix
-      if: ${{ github.ref != 'refs/heads/main' }}
-      run: echo "FRONTEND_DEPLOY_PATH_SUFFIX=${{ github.ref }}" | cut -f 3- -d '/' >> $GITHUB_ENV
+      if: ${{ github.event_name == 'pull_request' && github.head_ref != 'refs/heads/main' }}
+      run: echo "FRONTEND_DEPLOY_PATH_SUFFIX=$(${{ github.head_ref }} | cut -f 3- -d '/')" >> $GITHUB_ENV
 
     - uses: actions/download-artifact@v2
       with:
