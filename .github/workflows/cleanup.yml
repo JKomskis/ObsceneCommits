@@ -26,4 +26,4 @@ jobs:
       with:
         azPSVersion: latest
         inlineScript: |
-          az storage blob delete-batch -s '$web' --pattern "${{ env.FRONTEND_DEPLOY_PATH }}/${{ github.head_ref }}/*"
+          Get-AzStorageBlob -Container '$web' -Prefix "${{ env.FRONTEND_DEPLOY_PATH }}/${{ github.head_ref }}" | Remove-AzStorageBlob

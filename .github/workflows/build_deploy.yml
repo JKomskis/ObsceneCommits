@@ -87,7 +87,7 @@ jobs:
         cache-name: cache-node-modules-backend
       with:
         path: ~/.npm # npm cache files are stored in `~/.npm` on Linux/macOS
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
@@ -180,9 +180,9 @@ jobs:
               $fileProperties = $properties[$_.extension]
               $relativePath = $_ | Resolve-Path -Relative
               if($fileProperties) {
-                az storage blob upload -f $_.fullName -c '$web' -n $relativePath --content-type $fileProperties.ContentType --content-cache $fileProperties.CacheControl --no-progress
+                Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -properties $fileProperties -Force
               } else {
-                az storage blob upload -f $_.fullName -c '$web' -n $relativePath --no-progress
+                Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -Force
               }
             }
 
