@@ -189,8 +189,8 @@ jobs:
       runs-on: ubuntu-latest
       environment: build_environment
       defaults:
-      run:
-        working-directory: ./${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        run:
+          working-directory: ./${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
       steps:
       - uses: actions/checkout@main
