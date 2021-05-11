@@ -175,7 +175,7 @@ jobs:
           cd _site
           Set-AzCurrentStorageAccount -ResourceGroupName ${{ secrets.RESOURCE_GROUP_NAME }} -Name ${{ secrets.STORAGE_ACCOUNT_NAME }}
           Get-ChildItem -File -Recurse |
-            Foreach-Object {
+            Foreach-Object -Parallel {
               $fileProperties = $properties[$_.extension]
               $relativePath = $_ | Resolve-Path -Relative
               if($fileProperties) {
@@ -183,7 +183,7 @@ jobs:
               } else {
                 Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -Force
               }
-            }
+            } -ThrottleLimit 50
 
   deploy_backend:
       needs: build_backend
