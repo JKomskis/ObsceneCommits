@@ -30,7 +30,7 @@ jobs:
         cache-name: cache-node-modules
       with:
         path: ~/.npm # npm cache files are stored in `~/.npm` on Linux/macOS
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
@@ -87,7 +87,7 @@ jobs:
         cache-name: cache-node-modules-backend
       with:
         path: ~/.npm # npm cache files are stored in `~/.npm` on Linux/macOS
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
@@ -126,7 +126,7 @@ jobs:
     - uses: actions/download-artifact@v2
       with:
         name: dist
-        path: _site/${{ env.FRONTEND_DEPLOY_PATH }}${{ env.FRONTEND_DEPLOY_PATH_SUFFIX }}
+        path: _site/${{ env.FRONTEND_DEPLOY_PATH }}/${{ env.FRONTEND_DEPLOY_PATH_SUFFIX }}
 
     - uses: azure/login@v1.1
       with:
@@ -135,6 +135,9 @@ jobs:
     
     - name: Upload to blob storage
       uses: azure/powershell@v1
+      env:
+        AZURE_STORAGE_ACCOUNT: ${{ secrets.ACCOUNT_NAME }}
+        AZURE_STORAGE_KEY: ${{ secrets.ACCOUNT_KEY }}
       with:
         azPSVersion: latest
         inlineScript: |
@@ -177,9 +180,9 @@ jobs:
               $fileProperties = $properties[$_.extension]
               $relativePath = $_ | Resolve-Path -Relative
               if($fileProperties) {
-                Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -properties $fileProperties -Force
+                az storage blob upload -f $_.fullName -c '$web' -n $relativePath --content-type $fileProperties.ContentType --content-cache $fileProperties.CacheControl --no-progress
               } else {
-                Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -Force
+                az storage blob upload -f $_.fullName -c '$web' -n $relativePath --no-progress
               }
             }
 

@@ -1,0 +1,29 @@
+name: Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+env:
+  FRONTEND_DEPLOY_PATH: 'obscenecommits'
+
+jobs:
+  remove_frontend_deployment:
+    runs-on: ubuntu-latest
+    environment: build_environment
+
+    steps:
+    - uses: azure/login@v1.1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        enable-AzPSSession: true
+    
+    - name: Delete blobs
+      uses: azure/powershell@v1
+      env:
+        AZURE_STORAGE_ACCOUNT: ${{ secrets.ACCOUNT_NAME }}
+        AZURE_STORAGE_KEY: ${{ secrets.ACCOUNT_KEY }}
+      with:
+        azPSVersion: latest
+        inlineScript: |
+          az storage blob delete-batch -s '$web' --pattern "${{ env.FRONTEND_DEPLOY_PATH }}/${{ github.head_ref }}/*"
