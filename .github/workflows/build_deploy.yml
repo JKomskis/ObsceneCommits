@@ -121,7 +121,7 @@ jobs:
     
     - name: Set non-main branch deploy path suffix
       if: ${{ github.event_name == 'pull_request' && github.head_ref != 'refs/heads/main' }}
-      run: echo "FRONTEND_DEPLOY_PATH_SUFFIX=$(${{ github.head_ref }} | cut -f 3- -d '/')" >> $GITHUB_ENV
+      run: echo "FRONTEND_DEPLOY_PATH_SUFFIX=${{ github.head_ref }}" >> $GITHUB_ENV
 
     - uses: actions/download-artifact@v2
       with:
