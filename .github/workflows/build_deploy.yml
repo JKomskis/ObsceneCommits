@@ -13,7 +13,7 @@ env:
   FRONTEND_DEPLOY_PATH: 'obscenecommits'
 
 jobs:
-  build:
+  build_frontend:
     runs-on: ubuntu-latest
     environment: build_environment
 
@@ -39,7 +39,7 @@ jobs:
     - name: Cache Archives
       uses: actions/cache@v2
       env:
-        cache-name: cache-archives
+        cache-name: cache-archives-v2
         YEAR: "${{ steps.current-time.outputs.year }}"
         MONTH: "${{ steps.current-time.outputs.month }}"
         DAY: "${{ steps.current-time.outputs.day }}"
@@ -71,17 +71,62 @@ jobs:
         name: dist
         path: _site/
 
+  build_backend:
+    runs-on: ubuntu-latest
+    environment: build_environment
+    defaults:
+      run:
+        working-directory: ./${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
+    steps:
+    - uses: actions/checkout@main
+
+    - name: Cache node modules
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-node-modules-backend
+      with:
+        path: ~/.npm # npm cache files are stored in `~/.npm` on Linux/macOS
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+    
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - run: npm ci
+
+    - name: 'Build functions'
+      run: npm run build --if-present
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: dist
+
   deploy_frontend:
-    needs: build
-    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    needs: build_frontend
+    # if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     environment: build_environment
 
     steps:
+    - name: Set main branch deploy path suffix
+      if: ${{ github.ref == 'refs/heads/main' }}
+      run: echo "FRONTEND_DEPLOY_PATH_SUFFIX=" >> $GITHUB_ENV
+    
+    - name: Set non-main branch deploy path suffix
+      if: ${{ github.ref != 'refs/heads/main' }}
+      run: echo "FRONTEND_DEPLOY_PATH_SUFFIX=${{ github.ref }}" | cut -f 3- -d '/' >> $GITHUB_ENV
+
     - uses: actions/download-artifact@v2
       with:
         name: dist
-        path: _site/${{ env.FRONTEND_DEPLOY_PATH }}
+        path: _site/${{ env.FRONTEND_DEPLOY_PATH }}${{ env.FRONTEND_DEPLOY_PATH_SUFFIX }}
 
     - uses: azure/login@v1.1
       with:
@@ -139,26 +184,22 @@ jobs:
             }
 
   deploy_backend:
-      needs: build
+      needs: build_backend
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       runs-on: ubuntu-latest
       environment: build_environment
+      defaults:
+      run:
+        working-directory: ./${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
       steps:
       - uses: actions/checkout@main
 
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: dist
 
-      - name: 'Resolve Project Dependencies Using Npm'
-        shell: bash
-        run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          npm ci
-          npm run build --if-present
-          popd
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
         id: fa
