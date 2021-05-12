@@ -65,11 +65,14 @@ jobs:
         ACCOUNT_NAME: ${{ secrets.ACCOUNT_NAME }}
         ACCOUNT_KEY: ${{ secrets.ACCOUNT_KEY }}
         CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+    
+    - name: "Tar _site folder"
+      run: tar cfz dist.tar.gz -C _site .
 
     - uses: actions/upload-artifact@v2
       with:
-        name: dist
-        path: _site/
+        name: dist.tar.gz
+        path: dist.tar.gz
 
   build_backend:
     runs-on: ubuntu-latest
@@ -124,8 +127,12 @@ jobs:
 
     - uses: actions/download-artifact@v2
       with:
-        name: dist
-        path: _site/${{ env.FRONTEND_DEPLOY_PATH }}/${{ env.FRONTEND_DEPLOY_PATH_SUFFIX }}
+        name: dist.tar.gz
+    
+    - name: "Untar _site folder"
+      run: |
+        mkdir -p _site/${{ env.FRONTEND_DEPLOY_PATH }}/${{ env.FRONTEND_DEPLOY_PATH_SUFFIX }}
+        tar xzf dist.tar.gz -C _site/${{ env.FRONTEND_DEPLOY_PATH }}/${{ env.FRONTEND_DEPLOY_PATH_SUFFIX }}
 
     - uses: azure/login@v1.1
       with:
@@ -176,7 +183,8 @@ jobs:
           Set-AzCurrentStorageAccount -ResourceGroupName ${{ secrets.RESOURCE_GROUP_NAME }} -Name ${{ secrets.STORAGE_ACCOUNT_NAME }}
           Get-ChildItem -File -Recurse |
             Foreach-Object -Parallel {
-              $fileProperties = $properties[$_.extension]
+              $properties_dict = $using:properties
+              $fileProperties = $properties_dict[$_.extension]
               $relativePath = $_ | Resolve-Path -Relative
               if($fileProperties) {
                 Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -properties $fileProperties -Force
