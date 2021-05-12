@@ -13,7 +13,7 @@ env:
   FRONTEND_DEPLOY_PATH: 'obscenecommits'
 
 jobs:
-  build:
+  build_frontend:
     runs-on: ubuntu-latest
     environment: build_environment
 
@@ -30,7 +30,7 @@ jobs:
         cache-name: cache-node-modules
       with:
         path: ~/.npm # npm cache files are stored in `~/.npm` on Linux/macOS
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
@@ -39,7 +39,7 @@ jobs:
     - name: Cache Archives
       uses: actions/cache@v2
       env:
-        cache-name: cache-archives
+        cache-name: cache-archives-v2
         YEAR: "${{ steps.current-time.outputs.year }}"
         MONTH: "${{ steps.current-time.outputs.month }}"
         DAY: "${{ steps.current-time.outputs.day }}"
@@ -65,31 +65,85 @@ jobs:
         ACCOUNT_NAME: ${{ secrets.ACCOUNT_NAME }}
         ACCOUNT_KEY: ${{ secrets.ACCOUNT_KEY }}
         CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+    
+    - name: "Tar _site folder"
+      run: tar cfz dist.tar.gz -C _site .
 
     - uses: actions/upload-artifact@v2
       with:
-        name: dist
-        path: _site/
+        name: dist.tar.gz
+        path: dist.tar.gz
 
-  deploy_frontend:
-    needs: build
-    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+  build_backend:
     runs-on: ubuntu-latest
     environment: build_environment
 
     steps:
+    - uses: actions/checkout@main
+
+    - name: Cache node modules
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-node-modules-backend
+      with:
+        path: ~/.npm # npm cache files are stored in `~/.npm` on Linux/macOS
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles(format('{0}/package-lock.json', env.AZURE_FUNCTIONAPP_PACKAGE_PATH)) }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+    
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - run: npm ci
+      working-directory: ./${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
+    - name: 'Build functions'
+      run: npm run build --if-present
+      working-directory: ./${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: dist-functions
+        path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/dist
+
+  deploy_frontend:
+    needs: build_frontend
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.head_ref != 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+    environment: build_environment
+
+    steps:
+    - name: Set main branch deploy path suffix
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      run: echo "FRONTEND_DEPLOY_PATH_SUFFIX=" >> $GITHUB_ENV
+    
+    - name: Set non-main branch deploy path suffix
+      if: ${{ github.event_name == 'pull_request' && github.head_ref != 'refs/heads/main' }}
+      run: echo "FRONTEND_DEPLOY_PATH_SUFFIX=${{ github.head_ref }}" >> $GITHUB_ENV
+
     - uses: actions/download-artifact@v2
       with:
-        name: dist
-        path: _site/${{ env.FRONTEND_DEPLOY_PATH }}
+        name: dist.tar.gz
+    
+    - name: "Untar _site folder"
+      run: |
+        mkdir -p _site/${{ env.FRONTEND_DEPLOY_PATH }}/${{ env.FRONTEND_DEPLOY_PATH_SUFFIX }}
+        tar xzf dist.tar.gz -C _site/${{ env.FRONTEND_DEPLOY_PATH }}/${{ env.FRONTEND_DEPLOY_PATH_SUFFIX }}
 
-    - uses: azure/login@v1.1
+    - uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
         enable-AzPSSession: true
     
     - name: Upload to blob storage
       uses: azure/powershell@v1
+      env:
+        AZURE_STORAGE_ACCOUNT: ${{ secrets.ACCOUNT_NAME }}
+        AZURE_STORAGE_KEY: ${{ secrets.ACCOUNT_KEY }}
       with:
         azPSVersion: latest
         inlineScript: |
@@ -128,18 +182,19 @@ jobs:
           cd _site
           Set-AzCurrentStorageAccount -ResourceGroupName ${{ secrets.RESOURCE_GROUP_NAME }} -Name ${{ secrets.STORAGE_ACCOUNT_NAME }}
           Get-ChildItem -File -Recurse |
-            Foreach-Object {
-              $fileProperties = $properties[$_.extension]
+            Foreach-Object -Parallel {
+              $properties_dict = $using:properties
+              $fileProperties = $properties_dict[$_.extension]
               $relativePath = $_ | Resolve-Path -Relative
               if($fileProperties) {
                 Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -properties $fileProperties -Force
               } else {
                 Set-AzStorageBlobContent -File $_.fullName -Blob $relativePath -Container '$web' -Force
               }
-            }
+            } -ThrottleLimit 50
 
   deploy_backend:
-      needs: build
+      needs: build_backend
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       runs-on: ubuntu-latest
       environment: build_environment
@@ -147,18 +202,11 @@ jobs:
       steps:
       - uses: actions/checkout@main
 
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v1
+      - uses: actions/download-artifact@v2
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          name: dist-functions
+          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/dist
 
-      - name: 'Resolve Project Dependencies Using Npm'
-        shell: bash
-        run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          npm ci
-          npm run build --if-present
-          popd
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
         id: fa
