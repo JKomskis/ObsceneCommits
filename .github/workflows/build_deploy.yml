@@ -134,7 +134,7 @@ jobs:
         mkdir -p _site/${{ env.FRONTEND_DEPLOY_PATH }}/${{ env.FRONTEND_DEPLOY_PATH_SUFFIX }}
         tar xzf dist.tar.gz -C _site/${{ env.FRONTEND_DEPLOY_PATH }}/${{ env.FRONTEND_DEPLOY_PATH_SUFFIX }}
 
-    - uses: azure/login@v1.1
+    - uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
         enable-AzPSSession: true
