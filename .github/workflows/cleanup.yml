@@ -26,4 +26,5 @@ jobs:
       with:
         azPSVersion: latest
         inlineScript: |
+          Set-AzCurrentStorageAccount -ResourceGroupName ${{ secrets.RESOURCE_GROUP_NAME }} -Name ${{ secrets.STORAGE_ACCOUNT_NAME }}
           Get-AzStorageBlob -Container '$web' -Prefix "${{ env.FRONTEND_DEPLOY_PATH }}/${{ github.head_ref }}" | Remove-AzStorageBlob
