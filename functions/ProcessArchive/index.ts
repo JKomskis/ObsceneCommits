@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 import { AzureFunction, Context } from '@azure/functions';
 import { createGunzip, createGzip } from 'zlib';
 import split from 'split2';

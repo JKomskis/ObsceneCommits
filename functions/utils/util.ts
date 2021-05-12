@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+
 import {
     BlobServiceClient,
     ContainerClient,
@@ -31,7 +33,7 @@ export function getBlobName(timestamp: string): string {
 export function getContainerClient(): ContainerClient {
     const account = process.env.ACCOUNT_NAME || '';
     const accountKey = process.env.ACCOUNT_KEY || '';
-    const container = process.env.CONTAINER_NAME || '';
+    const container = process.env.ARCHIVE_CONTAINER_NAME || '';
     const sharedKeyCredential = new BlobStorageSharedKeyCredential(account, accountKey);
 
     const blobClient = new BlobServiceClient(
@@ -55,4 +57,13 @@ export function getQueueClient(): QueueClient {
         {},
     );
     return queueServiceClient.getQueueClient(queueName);
+}
+
+export function setEnvVariables(): void {
+    const settingsString = readFileSync('./local.settings.json', 'utf-8');
+    const settingsJson = JSON.parse(settingsString);
+
+    Object.keys(settingsJson['Values']).forEach((name) => {
+        process.env[name] = settingsJson['Values'][name];
+    });
 }
